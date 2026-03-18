@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IBI Pickup Request Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== VARIABLES & RESET ===== */
+:root {
+  --navy: #0B1A2E;
+  --navy2: #112240;
+  --amber: #F59E0B;
+  --amber-light: #FCD34D;
+  --green: #10B981;
+  --blue: #3B82F6;
+  --red: #EF4444;
+  --card: #162235;
+  --border: #1E3354;
+  --text: #E2EAF4;
+  --muted: #7A95B8;
+  --white: #FFFFFF;
+  --fn-color: #10B981;
+  --an-color: #3B82F6;
+  --amazon-color: #FF9900;
+  --flipkart-color: #2874F0;
+  --meesho-color: #B02E73;
+  --print-bg: #fff;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  background:var(--navy);
+  color:var(--text);
+  min-height:100vh;
+  line-height:1.6;
+}
+input,select,textarea,button{font-family:inherit}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--navy2)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ===== HEADER ===== */
+.header {
+  background: linear-gradient(135deg, var(--navy2) 0%, #0D2137 100%);
+  border-bottom: 2px solid var(--amber);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo {
+  width: 44px; height: 44px;
+  background: var(--amber);
+  border-radius: 10px;
+  display: flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;
+  font-weight:800;font-size:13px;
+  color: var(--navy);
+  letter-spacing:-0.5px;
+  flex-shrink:0;
+}
+.header-text h1 {
+  font-family:'Syne',sans-serif;
+  font-size:1.1rem;font-weight:800;
+  color:var(--white);
+  line-height:1.2;
+}
+.header-text p {
+  font-size:.75rem;color:var(--muted);
+}
+.header-badge {
+  margin-left:auto;
+  background:rgba(245,158,11,0.15);
+  border:1px solid rgba(245,158,11,0.3);
+  color:var(--amber);
+  font-size:.72rem;font-weight:600;
+  padding:4px 10px;border-radius:20px;
+  white-space:nowrap;
+}
+
+/* ===== LAYOUT ===== */
+.app {max-width:1100px;margin:0 auto;padding:20px 16px;}
+.grid-2 {display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3 {display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+@media(max-width:768px){.grid-2{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.grid-3{grid-template-columns:1fr}}
+
+/* ===== CARDS ===== */
+.card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:18px;
+}
+.card-title {
+  font-family:'Syne',sans-serif;
+  font-weight:700;font-size:.85rem;
+  color:var(--amber);
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;
+}
+.card-title .icon {font-size:1rem}
+
+/* ===== FORM CONTROLS ===== */
+label{display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:5px}
+input[type=text],input[type=date],input[type=tel],select {
+  width:100%;
+  background:var(--navy);
+  border:1.5px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  padding:9px 12px;
+  font-size:.88rem;
+  transition: border-color .2s;
+  appearance:none;-webkit-appearance:none;
+}
+input[type=text]:focus,input[type=date]:focus,input[type=tel]:focus,select:focus {
+  outline:none;
+  border-color:var(--amber);
+  box-shadow:0 0 0 3px rgba(245,158,11,.12);
+}
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237A95B8' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+  padding-right:32px;
+}
+.form-row {margin-bottom:12px}
+
+/* ===== FN/AN TOGGLE ===== */
+.fnan-toggle {display:flex;gap:0;border-radius:8px;overflow:hidden;border:1.5px solid var(--border);}
+.fnan-toggle label {
+  flex:1;margin:0;
+  display:flex;align-items:center;justify-content:center;
+  gap:6px;
+  padding:9px 12px;
+  font-size:.85rem;font-weight:700;
+  cursor:pointer;
+  color:var(--muted);
+  background:var(--navy);
+  transition:all .2s;
+  user-select:none;
+}
+.fnan-toggle input[type=radio]{display:none}
+.fnan-toggle input[type=radio]:checked + span {color:inherit}
+.fnan-toggle label:has(input:checked) { color:var(--white); }
+.fnan-fn label:has(input:checked) {background:rgba(16,185,129,.25);color:var(--fn-color);border-right:1.5px solid var(--fn-color);}
+.fnan-an label:has(input:checked) {background:rgba(59,130,246,.25);color:var(--an-color);}
+
+/* ===== BUTTONS ===== */
+.btn {
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:9px 16px;
+  border:none;border-radius:8px;
+  font-size:.85rem;font-weight:700;
+  cursor:pointer;
+  transition:all .18s;
+  text-decoration:none;
+  white-space:nowrap;
+}
+.btn-primary {background:var(--amber);color:var(--navy);}
+.btn-primary:hover {background:var(--amber-light);}
+.btn-ghost {background:transparent;color:var(--muted);border:1.5px solid var(--border);}
+.btn-ghost:hover{border-color:var(--text);color:var(--text);}
+.btn-green {background:rgba(16,185,129,.2);color:var(--green);border:1.5px solid rgba(16,185,129,.3);}
+.btn-green:hover{background:rgba(16,185,129,.35);}
+.btn-blue {background:rgba(59,130,246,.2);color:var(--blue);border:1.5px solid rgba(59,130,246,.3);}
+.btn-blue:hover{background:rgba(59,130,246,.35);}
+.btn-full {width:100%}
+.btn-sm {padding:6px 12px;font-size:.78rem}
+.btn-danger {background:rgba(239,68,68,.15);color:var(--red);border:1.5px solid rgba(239,68,68,.25);}
+.btn-danger:hover{background:rgba(239,68,68,.3);}
+
+/* ===== ORDER LIST ===== */
+.order-list {display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;padding-right:4px;}
+.order-item {
+  display:flex;align-items:center;gap:10px;
+  background:var(--navy);
+  border:1.5px solid var(--border);
+  border-radius:8px;
+  padding:8px 12px;
+  animation: slideIn .2s ease;
+}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.order-num {
+  font-family:'DM Mono',monospace;
+  font-size:.8rem;
+  color:var(--muted);
+  min-width:20px;
+}
+.order-id {
+  font-family:'DM Mono',monospace;
+  font-size:.82rem;
+  color:var(--text);
+  flex:1;
+}
+.order-platform-badge {
+  font-size:.68rem;font-weight:700;
+  padding:2px 7px;border-radius:20px;
+  white-space:nowrap;
+}
+.badge-amazon { background:rgba(255,153,0,.2);color:#FF9900; }
+.badge-flipkart { background:rgba(40,116,240,.2);color:#5A9BF5; }
+.badge-shopsy { background:rgba(40,116,240,.15);color:#7ABAFF; }
+.badge-meesho { background:rgba(176,46,115,.2);color:#E879B5; }
+.badge-amazon-bazaar { background:rgba(255,153,0,.15);color:#FFB347; }
+.fnan-badge {
+  font-size:.73rem;font-weight:700;
+  padding:2px 8px;border-radius:20px;
+}
+.fnan-badge.fn {background:rgba(16,185,129,.2);color:var(--fn-color);}
+.fnan-badge.an {background:rgba(59,130,246,.2);color:var(--an-color);}
+.order-remove {
+  background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:.95rem;
+  padding:2px;border-radius:4px;
+  transition:.15s;
+  flex-shrink:0;
+}
+.order-remove:hover{color:var(--red);}
+
+/* ===== COURIER PANELS ===== */
+.courier-panel {
+  border:1.5px solid var(--border);
+  border-radius:14px;
+  overflow:hidden;
+  margin-top:16px;
+}
+.courier-header {
+  padding:12px 16px;
+  display:flex;align-items:center;gap:10px;
+  border-bottom:1.5px solid var(--border);
+}
+.courier-dot {width:10px;height:10px;border-radius:50%;}
+.courier-dot.ats{background:var(--amazon-color);}
+.courier-dot.ekart{background:var(--flipkart-color);}
+.courier-dot.meesho{background:var(--meesho-color);}
+.courier-name {font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;}
+.courier-count {
+  margin-left:auto;
+  background:rgba(245,158,11,.15);
+  color:var(--amber);
+  font-size:.75rem;font-weight:700;
+  padding:3px 9px;border-radius:20px;
+}
+.courier-body {padding:14px 16px;}
+.courier-orders-mini {
+  font-family:'DM Mono',monospace;
+  font-size:.76rem;
+  color:var(--muted);
+  margin-bottom:12px;
+  line-height:1.8;
+  max-height:120px;
+  overflow-y:auto;
+}
+.courier-actions {display:flex;gap:8px;flex-wrap:wrap;}
+.wa-number-field {display:flex;gap:8px;margin-bottom:10px;}
+.wa-number-field input {flex:1}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  text-align:center;
+  padding:32px 16px;
+  color:var(--muted);
+}
+.empty-state .icon {font-size:2.5rem;margin-bottom:8px;}
+.empty-state p {font-size:.85rem;}
+
+/* ===== TABS ===== */
+.tabs {display:flex;gap:4px;background:var(--navy);border-radius:10px;padding:4px;margin-bottom:16px;}
+.tab {
+  flex:1;
+  padding:8px;
+  background:transparent;
+  border:none;
+  border-radius:7px;
+  color:var(--muted);
+  font-size:.8rem;font-weight:600;
+  cursor:pointer;
+  transition:.15s;
+  font-family:'Plus Jakarta Sans',sans-serif;
+}
+.tab.active{background:var(--card);color:var(--amber);}
+
+/* ===== PASTE EXTRACT ===== */
+.paste-box {
+  background:var(--navy);
+  border:1.5px dashed var(--border);
+  border-radius:8px;
+  padding:10px 12px;
+  font-family:'DM Mono',monospace;
+  font-size:.8rem;
+  color:var(--text);
+  width:100%;
+  min-height:80px;
+  resize:vertical;
+  transition:.2s;
+}
+.paste-box:focus{outline:none;border-color:var(--amber);}
+
+/* ===== NOTIFICATIONS ===== */
+.toast {
+  position:fixed;bottom:20px;right:20px;
+  background:var(--card);border:1.5px solid var(--green);
+  color:var(--green);
+  padding:10px 16px;border-radius:10px;
+  font-size:.85rem;font-weight:600;
+  z-index:999;
+  animation:toastIn .3s ease;
+  display:none;
+}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== DIVIDER ===== */
+.divider {border:none;border-top:1.5px solid var(--border);margin:16px 0;}
+
+/* ===== SECTION TITLE ===== */
+.section-title {
+  font-family:'Syne',sans-serif;
+  font-weight:700;font-size:.95rem;
+  color:var(--white);
+  margin:20px 0 12px;
+  display:flex;align-items:center;gap:8px;
+}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ===== STATS BAR ===== */
+.stats-bar {
+  display:flex;gap:10px;flex-wrap:wrap;
+  margin-bottom:16px;
+}
+.stat-chip {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:7px 12px;
+  font-size:.78rem;
+  display:flex;align-items:center;gap:6px;
+}
+.stat-chip strong{color:var(--amber);font-family:'DM Mono',monospace;}
+
+/* ===== WA PREVIEW MODAL ===== */
+.modal-overlay {
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.75);
+  backdrop-filter:blur(4px);
+  z-index:200;
+  display:none;
+  align-items:center;justify-content:center;
+  padding:16px;
+}
+.modal-overlay.open{display:flex;}
+.modal {
+  background:var(--card);
+  border:1.5px solid var(--border);
+  border-radius:16px;
+  width:100%;max-width:520px;
+  max-height:90vh;
+  overflow-y:auto;
+}
+.modal-header {
+  padding:16px 18px;
+  border-bottom:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.modal-header h3{font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;}
+.modal-close {background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:16px 18px;}
+.wa-message-preview {
+  background:var(--navy);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:14px;
+  font-family:'DM Mono',monospace;
+  font-size:.82rem;
+  white-space:pre-wrap;
+  line-height:1.8;
+  color:var(--text);
+  max-height:360px;
+  overflow-y:auto;
+}
+.modal-actions {
+  padding:14px 18px;
+  border-top:1.5px solid var(--border);
+  display:flex;gap:10px;
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+  body { background: white !important; color: black !important; }
+  .no-print, .header, .app > *:not(.print-area) { display: none !important; }
+  .print-area { display: block !important; }
+  .manifest-page { page-break-after: always; }
+  .manifest-page:last-child { page-break-after: avoid; }
+}
+.print-area { display: none; }
+
+/* ===== MANIFEST PRINT LAYOUT ===== */
+.manifest-page {
+  font-family: Arial, sans-serif;
+  padding: 24px 32px;
+  color: #000;
+  background: white;
+}
+.manifest-page * { color: #000 !important; background: transparent !important; }
+.manifest-header-title {
+  font-size: 16px; font-weight: bold;
+  text-align: center;
+  border: 2px solid #000;
+  padding: 8px;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+.manifest-meta {
+  display: flex; justify-content: space-between;
+  font-size: 12px; margin-bottom: 8px;
+}
+.manifest-meta-line { font-size: 12px; margin-bottom: 4px; }
+.manifest-meta-line strong { font-weight: bold; }
+.manifest-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 12px;
+}
+.manifest-table th {
+  background: #f0f0f0 !important;
+  border: 1px solid #000;
+  padding: 5px 8px;
+  font-weight: bold;
+  text-align: center;
+}
+.manifest-table td {
+  border: 1px solid #000;
+  padding: 5px 8px;
+  height: 24px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+}
+.manifest-table .col-sno { width: 40px; text-align: center; }
+.manifest-table .col-order { width: 45%; }
+.manifest-declaration {
+  font-size: 11px;
+  margin-top: 10px;
+  border-top: 1px solid #000;
+  padding-top: 8px;
+}
+.manifest-sign-area {
+  margin-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-size: 12px;
+}
+.manifest-sign-box {
+  border-top: 1.5px solid #000;
+  margin-top: 30px;
+  padding-top: 4px;
+  font-size: 11px;
+  min-width: 180px;
+}
+.manifest-company-sign {
+  text-align: right;
+  font-size: 12px;
+}
+.manifest-print-logo {
+  font-size: 20px; font-weight: 900;
+  letter-spacing: -1px;
+  margin-bottom: 2px;
+}
+
+/* ===== DRAG HINT ===== */
+.drag-hint {
+  font-size:.72rem;color:var(--muted);
+  text-align:center;margin-top:6px;
+}
+
+/* ===== COURIER ICON ===== */
+.platform-icon { font-size: 1.1rem; }
+
+/* ===== MOBILE ADJUSTMENTS ===== */
+@media(max-width:600px){
+  .header{padding:10px 14px}
+  .app{padding:12px 10px}
+  .modal-actions{flex-direction:column}
+  .courier-actions{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">IBI</div>
+  <div class="header-text">
+    <h1>Pickup Request Manager</h1>
+    <p>India Business International &nbsp;|&nbsp; Multi-Platform eCommerce</p>
+  </div>
+  <span class="header-badge">v2.0</span>
+</header>
+
+<!-- TOAST -->
+<div class="toast" id="toast">✓ Copied to clipboard!</div>
+
+<!-- MODAL: WhatsApp Preview -->
+<div class="modal-overlay" id="waModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📱 WhatsApp Message Preview</h3>
+      <button class="modal-close" onclick="closeWAModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="wa-message-preview" id="waPreviewText"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="copyWAMessage()">📋 Copy Message</button>
+      <a class="btn btn-green" id="waOpenLink" href="#" target="_blank">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Send via WhatsApp
+      </a>
+      <button class="btn btn-ghost btn-sm" onclick="closeWAModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT AREA -->
+<div class="print-area" id="printArea"></div>
+
+<!-- ============ MAIN APP ============ -->
+<div class="app">
+
+  <!-- STEP 1: Session Details -->
+  <div class="section-title">📅 Session Details</div>
+  <div class="card">
+    <div class="grid-3">
+      <div class="form-row">
+        <label>📆 Pickup Date</label>
+        <input type="date" id="pickupDate">
+      </div>
+      <div class="form-row">
+        <label>⏱️ SLA Date</label>
+        <input type="date" id="slaDate">
+      </div>
+      <div class="form-row">
+        <label>📞 Business Phone</label>
+        <input type="tel" id="bizPhone" value="+91 8939 4147 99">
+      </div>
+    </div>
+    <div class="form-row">
+      <label>🏢 Business Name</label>
+      <input type="text" id="bizName" value="India Business International">
+    </div>
+  </div>
+
+  <!-- STEP 2: Add Orders -->
+  <div class="section-title">📦 Add Orders</div>
+  <div class="grid-2">
+    <!-- Entry Form -->
+    <div class="card">
+      <div class="card-title"><span class="icon">✏️</span> Manual Entry</div>
+      <div class="form-row">
+        <label>Platform</label>
+        <select id="orderPlatform" onchange="updatePlaceholder()">
+          <option value="Amazon">Amazon</option>
+          <option value="Amazon Bazaar">Amazon Bazaar</option>
+          <option value="Flipkart">Flipkart</option>
+          <option value="Shopsy">Shopsy</option>
+          <option value="Meesho">Meesho</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Order ID</label>
+        <input type="text" id="orderID" placeholder="e.g. 407-6033308-1612301" autocomplete="off" onkeydown="if(event.key==='Enter')addOrder()">
+      </div>
+      <div class="form-row">
+        <label>Pickup Slot</label>
+        <div class="fnan-toggle">
+          <label class="fnan-fn">
+            <input type="radio" name="fnAn" value="FN" checked><span>☀️ FN (Forenoon)</span>
+          </label>
+          <label class="fnan-an">
+            <input type="radio" name="fnAn" value="AN"><span>🌆 AN (Afternoon)</span>
+          </label>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="addOrder()">➕ Add Order</button>
+
+      <hr class="divider">
+      <div class="card-title" style="margin-bottom:8px"><span class="icon">📋</span> Paste & Extract</div>
+      <textarea class="paste-box" id="pasteBox" placeholder="Paste text from Amazon Seller App, shipping label, or manifest here. Order IDs will be auto-detected..."></textarea>
+      <p class="drag-hint">Supports Amazon (XXX-XXXXXXX-XXXXXXX) and Flipkart (OD...) formats</p>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-ghost btn-sm" style="flex:1" onclick="extractFromPaste()">🔍 Extract Order IDs</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearPaste()">✕</button>
+      </div>
+      <!-- Extracted list -->
+      <div id="extractedList" style="display:none;margin-top:10px"></div>
+    </div>
+
+    <!-- Order List -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon">🗂️</span> Order Queue
+        <span id="orderCountBadge" style="margin-left:auto;background:rgba(245,158,11,.15);color:var(--amber);font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:20px;">0 orders</span>
+      </div>
+      <div class="stats-bar" id="statsBar" style="display:none">
+        <div class="stat-chip">📦 Total: <strong id="statTotal">0</strong></div>
+        <div class="stat-chip">☀️ FN: <strong id="statFN">0</strong></div>
+        <div class="stat-chip">🌆 AN: <strong id="statAN">0</strong></div>
+      </div>
+      <div id="orderList" class="order-list">
+        <div class="empty-state">
+          <div class="icon">📭</div>
+          <p>No orders added yet.<br>Use the form on the left to add orders.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-ghost btn-sm" onclick="clearAll()" style="flex:1">🗑️ Clear All</button>
+        <button class="btn btn-ghost btn-sm" onclick="sortOrders()" style="flex:1">↕️ Sort FN→AN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Generate -->
+  <div class="section-title">🚀 Generate Pickup Requests</div>
+
+  <!-- Amazon ATS Panel -->
+  <div id="atsPanel" class="courier-panel" style="display:none">
+    <div class="courier-header">
+      <div class="courier-dot ats"></div>
+      <span class="courier-name">📦 Amazon Transportation Services (ATS)</span>
+      <span class="courier-count" id="atsCount">0 pkgs</span>
+    </div>
+    <div class="courier-body">
+      <div class="courier-orders-mini" id="atsOrdersMini"></div>
+      <div class="wa-number-field">
+        <div style="flex:1">
+          <label>ATS Pickup Executive WhatsApp No.</label>
+          <input type="tel" id="atsWANum" placeholder="e.g. 919876543210" value="">
+        </div>
+      </div>
+      <div class="courier-actions">
+        <button class="btn btn-green" onclick="generateWA('ats')">
+          <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          WhatsApp Alert
+        </button>
+        <button class="btn btn-blue" onclick="printManifest('ats')">🖨️ Print Manifest</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flipkart / eKart Panel -->
+  <div id="ekartPanel" class="courier-panel" style="display:none">
+    <div class="courier-header">
+      <div class="courier-dot ekart"></div>
+      <span class="courier-name">🛒 eKart Services (Flipkart/Shopsy)</span>
+      <span class="courier-count" id="ekartCount">0 pkgs</span>
+    </div>
+    <div class="courier-body">
+      <div class="courier-orders-mini" id="ekartOrdersMini"></div>
+      <div class="wa-number-field">
+        <div style="flex:1">
+          <label>eKart Pickup Executive WhatsApp No.</label>
+          <input type="tel" id="ekartWANum" placeholder="e.g. 919876543210" value="">
+        </div>
+      </div>
+      <div class="courier-actions">
+        <button class="btn btn-green" onclick="generateWA('ekart')">
+          <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          WhatsApp Alert
+        </button>
+        <button class="btn btn-blue" onclick="printManifest('ekart')">🖨️ Print Manifest</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meesho Panel -->
+  <div id="meeshoPanel" class="courier-panel" style="display:none">
+    <div class="courier-header">
+      <div class="courier-dot meesho"></div>
+      <span class="courier-name">🚚 Meesho Logistics</span>
+      <span class="courier-count" id="meeshoCount">0 pkgs</span>
+    </div>
+    <div class="courier-body">
+      <div class="courier-orders-mini" id="meeshoOrdersMini"></div>
+      <div class="form-row">
+        <label>Courier Partner</label>
+        <select id="meeshoCourier">
+          <option value="Delhivery">Delhivery</option>
+          <option value="Xpress Bees">Xpress Bees</option>
+        </select>
+      </div>
+      <div class="wa-number-field">
+        <div style="flex:1">
+          <label>Courier Pickup Executive WhatsApp No.</label>
+          <input type="tel" id="meeshoWANum" placeholder="e.g. 919876543210" value="">
+        </div>
+      </div>
+      <div class="courier-actions">
+        <button class="btn btn-green" onclick="generateWA('meesho')">
+          <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          WhatsApp Alert
+        </button>
+        <button class="btn btn-blue" onclick="printManifest('meesho')">🖨️ Print Manifest</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- No orders placeholder -->
+  <div id="noOrdersMsg" class="card" style="text-align:center;padding:32px;color:var(--muted);font-size:.85rem">
+    ℹ️ Add orders above to generate pickup requests and manifests.
+  </div>
+
+  <!-- Footer -->
+  <div style="text-align:center;margin-top:32px;margin-bottom:16px;color:var(--muted);font-size:.75rem">
+    India Business International &nbsp;|&nbsp; iINTELLIGENCEi &nbsp;|&nbsp; Pickup Request Manager v2.0
+  </div>
+
+</div><!-- end .app -->
+
+<script>
+// ============ STATE ============
+let orders = [];
+let idCounter = 0;
+let currentWAMessage = '';
+
+// ============ PLATFORM CONFIG ============
+const PLATFORMS = {
+  'Amazon':        { courier:'ats', label:'Amazon', color:'badge-amazon' },
+  'Amazon Bazaar': { courier:'ats', label:'Amazon Bazaar', color:'badge-amazon-bazaar' },
+  'Flipkart':      { courier:'ekart', label:'Flipkart', color:'badge-flipkart' },
+  'Shopsy':        { courier:'ekart', label:'Shopsy', color:'badge-shopsy' },
+  'Meesho':        { courier:'meesho', label:'Meesho', color:'badge-meesho' },
+};
+
+const COURIER_CONFIG = {
+  ats: {
+    name: 'Amazon Transportation Services (ATS)',
+    mode: 'Amazon Pickup / ATS',
+    declarationPlatform: 'Amazon',
+    waHeader: '🚨 Pickup Alert',
+    packageWord: 'Amazon',
+    manifestTitle: 'AMAZON PICKUP - MANIFEST',
+  },
+  ekart: {
+    name: 'eKart Services',
+    mode: 'Flipkart/Shopsy eKart',
+    declarationPlatform: 'Flipkart',
+    waHeader: '🚨 Pickup Alert',
+    packageWord: 'Flipkart/Shopsy',
+    manifestTitle: 'EKART SERVICES - PICKUP MANIFEST',
+  },
+  meesho: {
+    name: '', // set dynamically
+    mode: 'Meesho',
+    declarationPlatform: 'Meesho',
+    waHeader: '🚨 Pickup Alert',
+    packageWord: 'Meesho',
+    manifestTitle: 'MEESHO - PICKUP MANIFEST',
+  },
+};
+
+// ============ UTILITY FUNCTIONS ============
+const NUM_WORDS = {
+  1:'One',2:'Two',3:'Three',4:'Four',5:'Five',6:'Six',7:'Seven',8:'Eight',
+  9:'Nine',10:'Ten',11:'Eleven',12:'Twelve',13:'Thirteen',14:'Fourteen',
+  15:'Fifteen',16:'Sixteen',17:'Seventeen',18:'Eighteen',19:'Nineteen',20:'Twenty',
+  21:'Twenty-One',22:'Twenty-Two',23:'Twenty-Three',24:'Twenty-Four',25:'Twenty-Five',
+  26:'Twenty-Six',27:'Twenty-Seven',28:'Twenty-Eight',29:'Twenty-Nine',30:'Thirty',
+};
+
+function numToWords(n) {
+  return NUM_WORDS[n] || n.toString();
+}
+
+function formatDateLong(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function formatDateShort(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function formatDateMedium(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function showToast(msg = '✓ Done!') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
+
+// ============ INIT ============
+window.addEventListener('DOMContentLoaded', () => {
+  // Set today's date as default
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const dd = String(today.getDate()).padStart(2,'0');
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+  document.getElementById('pickupDate').value = todayStr;
+  document.getElementById('slaDate').value = todayStr;
+
+  // Load from localStorage
+  const saved = localStorage.getItem('ibi_pickup_orders');
+  if (saved) {
+    try {
+      const data = JSON.parse(saved);
+      orders = data.orders || [];
+      idCounter = data.idCounter || 0;
+      if (data.pickupDate) document.getElementById('pickupDate').value = data.pickupDate;
+      if (data.slaDate) document.getElementById('slaDate').value = data.slaDate;
+      if (data.bizName) document.getElementById('bizName').value = data.bizName;
+      if (data.bizPhone) document.getElementById('bizPhone').value = data.bizPhone;
+      if (data.atsWA) document.getElementById('atsWANum').value = data.atsWA;
+      if (data.ekartWA) document.getElementById('ekartWANum').value = data.ekartWA;
+      if (data.meeshoWA) document.getElementById('meeshoWANum').value = data.meeshoWA;
+    } catch(e) {}
+  }
+
+  renderOrders();
+  updatePanels();
+});
+
+function saveState() {
+  const data = {
+    orders, idCounter,
+    pickupDate: document.getElementById('pickupDate').value,
+    slaDate: document.getElementById('slaDate').value,
+    bizName: document.getElementById('bizName').value,
+    bizPhone: document.getElementById('bizPhone').value,
+    atsWA: document.getElementById('atsWANum').value,
+    ekartWA: document.getElementById('ekartWANum').value,
+    meeshoWA: document.getElementById('meeshoWANum').value,
+  };
+  localStorage.setItem('ibi_pickup_orders', JSON.stringify(data));
+}
+
+// ============ ORDER MANAGEMENT ============
+function addOrder() {
+  const platform = document.getElementById('orderPlatform').value;
+  const orderID = document.getElementById('orderID').value.trim();
+  const fnAn = document.querySelector('input[name="fnAn"]:checked').value;
+
+  if (!orderID) {
+    document.getElementById('orderID').focus();
+    document.getElementById('orderID').style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById('orderID').style.borderColor = '', 1500);
+    return;
+  }
+
+  orders.push({ id: ++idCounter, platform, orderID, fnAn });
+  document.getElementById('orderID').value = '';
+  document.getElementById('orderID').focus();
+
+  saveState();
+  renderOrders();
+  updatePanels();
+}
+
+function removeOrder(id) {
+  orders = orders.filter(o => o.id !== id);
+  saveState();
+  renderOrders();
+  updatePanels();
+}
+
+function clearAll() {
+  if (orders.length === 0) return;
+  if (!confirm('Clear all orders?')) return;
+  orders = [];
+  saveState();
+  renderOrders();
+  updatePanels();
+}
+
+function sortOrders() {
+  orders.sort((a, b) => {
+    if (a.fnAn === b.fnAn) return 0;
+    return a.fnAn === 'FN' ? -1 : 1;
+  });
+  saveState();
+  renderOrders();
+}
+
+function updatePlaceholder() {
+  const p = document.getElementById('orderPlatform').value;
+  const placeholders = {
+    'Amazon': '407-6033308-1612301',
+    'Amazon Bazaar': '407-6033308-1612301',
+    'Flipkart': 'OD123456789012345678',
+    'Shopsy': 'OD123456789012345678',
+    'Meesho': 'Meesho Order ID',
+  };
+  document.getElementById('orderID').placeholder = placeholders[p] || 'Order ID';
+}
+
+// ============ RENDER ORDERS ============
+function renderOrders() {
+  const list = document.getElementById('orderList');
+  const badge = document.getElementById('orderCountBadge');
+  const statsBar = document.getElementById('statsBar');
+
+  badge.textContent = orders.length + ' order' + (orders.length !== 1 ? 's' : '');
+
+  if (orders.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No orders added yet.<br>Use the form on the left to add orders.</p></div>`;
+    statsBar.style.display = 'none';
+    return;
+  }
+
+  statsBar.style.display = 'flex';
+  const fn = orders.filter(o => o.fnAn === 'FN').length;
+  const an = orders.filter(o => o.fnAn === 'AN').length;
+  document.getElementById('statTotal').textContent = orders.length;
+  document.getElementById('statFN').textContent = fn;
+  document.getElementById('statAN').textContent = an;
+
+  list.innerHTML = orders.map((o, i) => `
+    <div class="order-item">
+      <span class="order-num">${i+1}</span>
+      <span class="order-id">${escHtml(o.orderID)}</span>
+      <span class="order-platform-badge ${PLATFORMS[o.platform]?.color||''}">${o.platform}</span>
+      <span class="fnan-badge ${o.fnAn.toLowerCase()}">${o.fnAn}</span>
+      <button class="order-remove" onclick="removeOrder(${o.id})" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ============ UPDATE PANELS ============
+function updatePanels() {
+  const ats = orders.filter(o => PLATFORMS[o.platform]?.courier === 'ats');
+  const ekart = orders.filter(o => PLATFORMS[o.platform]?.courier === 'ekart');
+  const meesho = orders.filter(o => PLATFORMS[o.platform]?.courier === 'meesho');
+
+  updatePanel('ats', ats);
+  updatePanel('ekart', ekart);
+  updatePanel('meesho', meesho);
+
+  const hasOrders = orders.length > 0;
+  document.getElementById('noOrdersMsg').style.display = hasOrders ? 'none' : 'block';
+}
+
+function updatePanel(courier, courierOrders) {
+  const panel = document.getElementById(courier + 'Panel');
+  const count = document.getElementById(courier + 'Count');
+  const mini = document.getElementById(courier + 'OrdersMini');
+
+  if (courierOrders.length === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  panel.style.display = 'block';
+  count.textContent = courierOrders.length + ' pkg' + (courierOrders.length !== 1 ? 's' : '');
+
+  const fn = courierOrders.filter(o => o.fnAn === 'FN');
+  const an = courierOrders.filter(o => o.fnAn === 'AN');
+  let miniHtml = '';
+  if (fn.length) miniHtml += `<span style="color:var(--fn-color)">☀️ FN (${fn.length}):</span> ` + fn.map(o => o.orderID).join(', ') + '<br>';
+  if (an.length) miniHtml += `<span style="color:var(--an-color)">🌆 AN (${an.length}):</span> ` + an.map(o => o.orderID).join(', ');
+  mini.innerHTML = miniHtml;
+}
+
+// ============ PASTE & EXTRACT ============
+function extractFromPaste() {
+  const text = document.getElementById('pasteBox').value;
+  if (!text.trim()) return;
+
+  const platform = document.getElementById('orderPlatform').value;
+  const fnAn = document.querySelector('input[name="fnAn"]:checked').value;
+
+  // Patterns
+  const patterns = [
+    /\b(\d{3}-\d{7}-\d{7})\b/g,          // Amazon: 407-1234567-1234567
+    /\b(OD\d{17,20})\b/g,                 // Flipkart: OD...
+    /\b([A-Z0-9]{10,20})\b/g,             // Generic alphanumeric
+  ];
+
+  const found = new Set();
+  patterns.forEach(p => {
+    const matches = [...text.matchAll(p)];
+    matches.forEach(m => found.add(m[1]));
+  });
+
+  if (found.size === 0) {
+    document.getElementById('extractedList').style.display = 'block';
+    document.getElementById('extractedList').innerHTML = '<p style="color:var(--red);font-size:.8rem">No order IDs detected. Check the pasted text format.</p>';
+    return;
+  }
+
+  const extracted = [...found];
+  const container = document.getElementById('extractedList');
+  container.style.display = 'block';
+  container.innerHTML = `
+    <p style="font-size:.78rem;color:var(--green);margin-bottom:8px">✓ ${extracted.length} order ID(s) detected. Click to add each one:</p>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${extracted.map(id => `
+        <button class="btn btn-ghost btn-sm" style="font-family:'DM Mono',monospace;font-size:.75rem" 
+          onclick="addExtracted('${id}','${platform}','${fnAn}', this)">
+          + ${id}
+        </button>
+      `).join('')}
+    </div>
+    <button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%" onclick="addAllExtracted(${JSON.stringify(extracted).replace(/"/g,"'")}, '${platform}', '${fnAn}')">
+      ➕ Add All ${extracted.length} Orders
+    </button>
+  `;
+}
+
+function addExtracted(id, platform, fnAn, btn) {
+  orders.push({ id: ++idCounter, platform, orderID: id, fnAn });
+  saveState();
+  renderOrders();
+  updatePanels();
+  btn.style.background = 'rgba(16,185,129,.2)';
+  btn.style.color = 'var(--green)';
+  btn.textContent = '✓ ' + id;
+  btn.disabled = true;
+}
+
+function addAllExtracted(ids, platform, fnAn) {
+  ids.forEach(id => {
+    if (!orders.find(o => o.orderID === id)) {
+      orders.push({ id: ++idCounter, platform, orderID: id, fnAn });
+    }
+  });
+  saveState();
+  renderOrders();
+  updatePanels();
+  clearPaste();
+  showToast(`✓ Added ${ids.length} orders!`);
+}
+
+function clearPaste() {
+  document.getElementById('pasteBox').value = '';
+  document.getElementById('extractedList').style.display = 'none';
+  document.getElementById('extractedList').innerHTML = '';
+}
+
+// ============ WHATSAPP GENERATION ============
+function generateWA(courier) {
+  const pickupDate = document.getElementById('pickupDate').value;
+  const slaDate = document.getElementById('slaDate').value;
+  const bizName = document.getElementById('bizName').value;
+  const bizPhone = document.getElementById('bizPhone').value;
+
+  if (!pickupDate || !slaDate) {
+    alert('Please set Pickup Date and SLA Date first.');
+    return;
+  }
+
+  const courierOrders = orders.filter(o => PLATFORMS[o.platform]?.courier === courier);
+  if (courierOrders.length === 0) return;
+
+  const config = { ...COURIER_CONFIG[courier] };
+  if (courier === 'meesho') {
+    config.name = document.getElementById('meeshoCourier').value;
+  }
+
+  const fn = courierOrders.filter(o => o.fnAn === 'FN');
+  const an = courierOrders.filter(o => o.fnAn === 'AN');
+  const total = courierOrders.length;
+  const totalWord = numToWords(total);
+
+  // Platform label for message
+  const platformLabel = {
+    ats: 'Amazon',
+    ekart: 'Flipkart/Shopsy',
+    meesho: 'Meesho',
+  }[courier];
+
+  // Build order list
+  let orderLines = '';
+  let num = 1;
+  fn.forEach(o => {
+    orderLines += `${num}.\u00a0\u00a0\u00a0\u00a0\u00a0${o.orderID} - (FN)\n`;
+    num++;
+  });
+  if (fn.length && an.length) orderLines += '\n';
+  an.forEach(o => {
+    orderLines += `${num}.\u00a0\u00a0\u00a0\u00a0\u00a0${o.orderID} - (AN)\n`;
+    num++;
+  });
+
+  const dateStr = formatDateLong(pickupDate);
+  const slaStr = formatDateShort(slaDate);
+
+  const msg = `🚨 Pickup Alert | ${bizName}
+Dear Sir, ${totalWord} (${total}) ${platformLabel} package${total!==1?'s':''} are ready for pickup today (${dateStr}).
+⏱️ SLA: ${slaStr}
+Order ID(s):
+${orderLines.trimEnd()}
+Kindly arrange pickup at the earliest.
+Thank you for your support.
+${bizName} 📞 ${bizPhone}`;
+
+  currentWAMessage = msg;
+
+  // Show modal
+  document.getElementById('waPreviewText').textContent = msg;
+  
+  // WA link
+  const waNum = document.getElementById(courier + 'WANum').value.replace(/\D/g,'');
+  const encoded = encodeURIComponent(msg);
+  const link = waNum
+    ? `https://api.whatsapp.com/send?phone=${waNum}&text=${encoded}`
+    : `https://api.whatsapp.com/send?text=${encoded}`;
+  document.getElementById('waOpenLink').href = link;
+
+  document.getElementById('waModal').classList.add('open');
+}
+
+function closeWAModal() {
+  document.getElementById('waModal').classList.remove('open');
+}
+
+function copyWAMessage() {
+  navigator.clipboard.writeText(currentWAMessage).then(() => {
+    showToast('✓ Message copied to clipboard!');
+  });
+}
+
+// Close modal on overlay click
+document.getElementById('waModal').addEventListener('click', function(e) {
+  if (e.target === this) closeWAModal();
+});
+
+// ============ PRINT MANIFEST ============
+function printManifest(courier) {
+  const pickupDate = document.getElementById('pickupDate').value;
+  const slaDate = document.getElementById('slaDate').value;
+  const bizName = document.getElementById('bizName').value;
+
+  if (!pickupDate) { alert('Please set Pickup Date first.'); return; }
+
+  const courierOrders = orders.filter(o => PLATFORMS[o.platform]?.courier === courier);
+  if (courierOrders.length === 0) return;
+
+  const config = { ...COURIER_CONFIG[courier] };
+  if (courier === 'meesho') {
+    config.name = document.getElementById('meeshoCourier').value;
+    config.manifestTitle = `MEESHO - ${config.name.toUpperCase()} - PICKUP MANIFEST`;
+    config.mode = `Meesho / ${config.name}`;
+  }
+
+  const fn = courierOrders.filter(o => o.fnAn === 'FN');
+  const an = courierOrders.filter(o => o.fnAn === 'AN');
+  const total = courierOrders.length;
+  const totalWord = numToWords(total);
+
+  const dateStr = formatDateMedium(pickupDate);
+  const shortPickup = formatDateShort(pickupDate);
+  const slaStr = formatDateShort(slaDate);
+
+  // Build rows for FN and AN columns (max rows = max of fn/an, min 8)
+  const maxRows = Math.max(fn.length, an.length, 8);
+  let rows = '';
+  for (let i = 0; i < maxRows; i++) {
+    const fnOrder = fn[i];
+    const anOrder = an[i];
+    const rowNum = i + 1;
+    rows += `
+    <tr>
+      <td class="col-sno">${fnOrder ? rowNum : ''}</td>
+      <td class="col-order">${fnOrder ? fnOrder.orderID : ''}</td>
+      <td class="col-sno">${anOrder ? (fn.length + i + 1) : ''}</td>
+      <td class="col-order">${anOrder ? anOrder.orderID : ''}</td>
+    </tr>`;
+  }
+
+  const manifestHTML = `
+<div class="manifest-page">
+  <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
+    <tr>
+      <td style="width:80px">
+        <div class="manifest-print-logo">IBI</div>
+        <div style="font-size:9px;font-weight:bold;letter-spacing:.5px">INDIA BUSINESS<br>INTERNATIONAL</div>
+      </td>
+      <td style="text-align:center;vertical-align:middle">
+        <div class="manifest-header-title">${config.manifestTitle}</div>
+      </td>
+      <td style="width:80px;text-align:right;font-size:10px;vertical-align:top">
+        <strong>Courier:</strong><br>${config.name}
+      </td>
+    </tr>
+  </table>
+  
+  <div class="manifest-meta">
+    <div><strong>Pickup Date:</strong> ${shortPickup} &nbsp; | &nbsp; <strong>Day:</strong> ${dateStr}</div>
+    <div><strong>⏱️ SLA:</strong> ${slaStr}</div>
+  </div>
+  <div class="manifest-meta-line"><strong>Total Packages:</strong> ${total} (${totalWord}) &nbsp; | &nbsp; <strong>Mode:</strong> ${config.mode} &nbsp; | &nbsp; <strong>FN:</strong> ${fn.length} &nbsp; | &nbsp; <strong>AN:</strong> ${an.length}</div>
+
+  <table class="manifest-table">
+    <thead>
+      <tr>
+        <th class="col-sno">S.No.</th>
+        <th class="col-order">FN – Order ID</th>
+        <th class="col-sno">S.No.</th>
+        <th class="col-order">AN – Order ID</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows}
+      <tr style="background:#f9f9f9">
+        <td colspan="2" style="text-align:right;font-size:11px;font-weight:bold">FN Total: ${fn.length}</td>
+        <td colspan="2" style="text-align:right;font-size:11px;font-weight:bold">AN Total: ${an.length}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="manifest-declaration">
+    <strong>Declaration:</strong> All the above parcels are packed, labelled, and ready for pickup as per ${config.declarationPlatform} shipping guidelines.
+  </div>
+
+  <div class="manifest-sign-area">
+    <div>
+      <div style="font-size:12px;font-weight:bold;margin-bottom:4px">Pickup Executive Details:</div>
+      <table style="border-collapse:collapse;font-size:12px">
+        <tr>
+          <td style="padding:4px 0;padding-right:16px"><strong>Name:</strong></td>
+          <td style="border-bottom:1px solid #000;min-width:180px;padding:4px 8px">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;padding-right:16px"><strong>Mobile:</strong></td>
+          <td style="border-bottom:1px solid #000;min-width:180px;padding:4px 8px">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;padding-right:16px"><strong>Signature:</strong></td>
+          <td style="border-bottom:1px solid #000;min-width:180px;height:36px;padding:4px 8px">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;padding-right:16px"><strong>Date/Time:</strong></td>
+          <td style="border-bottom:1px solid #000;min-width:180px;padding:4px 8px">&nbsp;</td>
+        </tr>
+      </table>
+    </div>
+    <div class="manifest-company-sign">
+      <div style="font-size:13px;font-weight:bold">${bizName}</div>
+      <div style="font-size:11px;margin:4px 0">Authorised Signatory</div>
+      <div style="border-top:1px solid #000;margin-top:36px;padding-top:4px;font-size:11px">Sign &amp; Seal</div>
+      <div style="font-size:10px;margin-top:6px">Total Packages Handed: ______ / ${total}</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:10px;font-size:9px;color:#666;border-top:1px dashed #ccc;padding-top:6px">
+    Generated by IBI Pickup Request Manager &nbsp;|&nbsp; ${new Date().toLocaleString('en-IN')}
+  </div>
+</div>`;
+
+  const printArea = document.getElementById('printArea');
+  printArea.innerHTML = manifestHTML;
+  printArea.style.display = 'block';
+
+  // Add print styles dynamically
+  const style = document.createElement('style');
+  style.id = 'dynamicPrintStyle';
+  style.media = 'print';
+  style.textContent = `
+    body > * { display: none !important; }
+    .print-area { display: block !important; }
+    @page { size: A4; margin: 15mm 18mm; }
+  `;
+  document.head.appendChild(style);
+
+  setTimeout(() => {
+    window.print();
+    // Cleanup after print
+    setTimeout(() => {
+      const s = document.getElementById('dynamicPrintStyle');
+      if (s) s.remove();
+      printArea.style.display = 'none';
+      printArea.innerHTML = '';
+    }, 1000);
+  }, 100);
+}
+
+// ============ KEYBOARD SHORTCUT ============
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeWAModal();
+});
+
+// ============ AUTO-SAVE on input changes ============
+['pickupDate','slaDate','bizName','bizPhone','atsWANum','ekartWANum','meeshoWANum'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', saveState);
+});
+</script>
+</body>
+</html>
