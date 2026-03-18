@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IBI Amazon Pickup Request Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root {
+  --navy:#0B1A2E; --navy2:#112240; --amber:#F59E0B; --amber-light:#FCD34D;
+  --green:#10B981; --blue:#3B82F6; --red:#EF4444;
+  --card:#162235; --border:#1E3354; --text:#E2EAF4; --muted:#7A95B8; --white:#FFFFFF;
+  --amazon:#FF9900;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--navy);color:var(--text);min-height:100vh;line-height:1.6}
+input,select,textarea,button{font-family:inherit}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--navy2)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,var(--navy2),#0D2137);border-bottom:2px solid var(--amber);padding:12px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,.4)}
+.logo{width:44px;height:44px;background:var(--amber);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:12px;color:var(--navy);flex-shrink:0;letter-spacing:-.3px}
+.header-text h1{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--white);line-height:1.2}
+.header-text p{font-size:.7rem;color:var(--muted)}
+.amazon-badge{margin-left:auto;background:rgba(255,153,0,.15);border:1px solid rgba(255,153,0,.35);color:var(--amazon);font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:5px}
+
+/* LAYOUT */
+.app{max-width:940px;margin:0 auto;padding:18px 14px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid-2-3{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+@media(max-width:700px){.grid-2,.grid-2-3{grid-template-columns:1fr}}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
+.section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;color:var(--white);margin:18px 0 10px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* FORM */
+label{display:block;font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:4px}
+input[type=text],input[type=date],input[type=tel],select{width:100%;background:var(--navy);border:1.5px solid var(--border);border-radius:8px;color:var(--text);padding:8px 11px;font-size:.85rem;transition:border-color .2s;appearance:none;-webkit-appearance:none}
+input:focus,select:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,158,11,.1)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237A95B8' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px}
+.form-row{margin-bottom:10px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 15px;border:none;border-radius:8px;font-size:.83rem;font-weight:700;cursor:pointer;transition:all .15s;text-decoration:none;white-space:nowrap}
+.btn-primary{background:var(--amber);color:var(--navy)}.btn-primary:hover{background:var(--amber-light)}
+.btn-ghost{background:transparent;color:var(--muted);border:1.5px solid var(--border)}.btn-ghost:hover{border-color:var(--text);color:var(--text)}
+.btn-green{background:rgba(16,185,129,.18);color:var(--green);border:1.5px solid rgba(16,185,129,.3)}.btn-green:hover{background:rgba(16,185,129,.32)}
+.btn-blue{background:rgba(59,130,246,.18);color:var(--blue);border:1.5px solid rgba(59,130,246,.3)}.btn-blue:hover{background:rgba(59,130,246,.32)}
+.btn-full{width:100%}.btn-sm{padding:5px 10px;font-size:.75rem}
+
+/* INPUT TABS */
+.input-tabs{display:flex;background:var(--navy);border-radius:9px;padding:3px;margin-bottom:12px;gap:3px}
+.input-tab{flex:1;padding:7px 4px;background:transparent;border:none;border-radius:6px;color:var(--muted);font-size:.74rem;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit;text-align:center}
+.input-tab.active{background:var(--card);color:var(--amber)}
+
+/* PDF UPLOAD */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:22px 16px;text-align:center;cursor:pointer;transition:all .2s;background:var(--navy);position:relative;overflow:hidden}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--amber);background:rgba(245,158,11,.04)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{font-size:2rem;margin-bottom:6px}
+.upload-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;color:var(--white);margin-bottom:3px}
+.upload-sub{font-size:.73rem;color:var(--muted)}
+.upload-hint{font-size:.68rem;color:var(--muted);margin-top:5px;font-style:italic}
+.pdf-queue{display:flex;flex-direction:column;gap:5px;margin-top:10px;max-height:180px;overflow-y:auto}
+.pdf-item{display:flex;align-items:center;gap:9px;background:var(--navy);border:1.5px solid var(--border);border-radius:8px;padding:7px 11px;font-size:.78rem;transition:border-color .3s}
+.pdf-item.processing{border-color:rgba(245,158,11,.4);animation:pulse 1.2s ease infinite}
+.pdf-item.done{border-color:rgba(16,185,129,.3)}.pdf-item.error{border-color:rgba(239,68,68,.3)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+.pdf-name{flex:1;font-family:'DM Mono',monospace;font-size:.73rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pdf-status{font-size:.7rem;font-weight:700;white-space:nowrap}
+.pdf-status.ok{color:var(--green)}.pdf-status.err{color:var(--red)}.pdf-status.proc{color:var(--amber)}
+.raw-toggle{font-size:.67rem;color:var(--muted);cursor:pointer;text-decoration:underline;margin-top:4px;display:inline-block}
+.raw-text-box{background:var(--navy);border:1px solid var(--border);border-radius:6px;padding:8px;font-family:'DM Mono',monospace;font-size:.69rem;color:var(--muted);white-space:pre-wrap;max-height:110px;overflow-y:auto;margin-top:5px;display:none;line-height:1.5}
+
+/* REVIEW */
+.review-panel{background:var(--navy);border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-top:10px}
+.review-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.review-header h4{font-family:'Syne',sans-serif;font-size:.79rem;font-weight:700;color:var(--white)}
+.review-list{display:flex;flex-direction:column;gap:5px;max-height:260px;overflow-y:auto}
+.review-item{display:grid;grid-template-columns:16px 1fr auto auto;gap:6px;align-items:center;background:var(--card);border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;animation:slideIn .15s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
+.r-id{font-family:'DM Mono',monospace;font-size:.8rem;color:var(--text)}
+.r-plat-sel{padding:3px 22px 3px 7px;font-size:.72rem;border-radius:6px;width:auto}
+.r-cb{width:15px;height:15px;accent-color:var(--amber);cursor:pointer}
+.r-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:.85rem;padding:2px;border-radius:4px;transition:.1s}
+.r-del:hover{color:var(--red)}
+.review-actions{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+
+/* ORDER LIST */
+.order-list{display:flex;flex-direction:column;gap:5px;max-height:350px;overflow-y:auto;padding-right:2px}
+.order-item{display:flex;align-items:center;gap:8px;background:var(--navy);border:1.5px solid var(--border);border-radius:8px;padding:7px 11px;animation:slideIn .15s ease}
+.order-num{font-family:'DM Mono',monospace;font-size:.73rem;color:var(--muted);min-width:20px}
+.order-id{font-family:'DM Mono',monospace;font-size:.8rem;color:var(--text);flex:1}
+.plat-badge{font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.badge-amazon{background:rgba(255,153,0,.2);color:#FF9900}
+.badge-bazaar{background:rgba(255,153,0,.12);color:#FFB74D}
+.o-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:.88rem;padding:2px;border-radius:4px;transition:.1s;flex-shrink:0}
+.o-del:hover{color:var(--red)}
+.stats-bar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.stat-chip{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:5px 9px;font-size:.72rem;display:flex;align-items:center;gap:4px}
+.stat-chip strong{color:var(--amber);font-family:'DM Mono',monospace}
+.empty-state{text-align:center;padding:26px 10px;color:var(--muted)}
+.empty-state .icon{font-size:2rem;margin-bottom:5px}
+.empty-state p{font-size:.79rem}
+.badge-counter{background:rgba(245,158,11,.15);color:var(--amber);font-size:.67rem;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:auto}
+
+/* GENERATE PANEL */
+.gen-panel{background:var(--card);border:1.5px solid rgba(255,153,0,.3);border-radius:14px;overflow:hidden;margin-top:14px}
+.gen-header{padding:12px 16px;display:flex;align-items:center;gap:10px;background:rgba(255,153,0,.07);border-bottom:1.5px solid rgba(255,153,0,.2)}
+.gen-dot{width:10px;height:10px;border-radius:50%;background:var(--amazon)}
+.gen-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem}
+.gen-count{margin-left:auto;background:rgba(255,153,0,.18);color:var(--amazon);font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:20px}
+.gen-body{padding:14px 16px}
+.order-preview{font-family:'DM Mono',monospace;font-size:.74rem;color:var(--muted);margin-bottom:12px;line-height:1.9;max-height:130px;overflow-y:auto;background:var(--navy);border-radius:8px;padding:10px 12px;border:1px solid var(--border)}
+.wa-row{display:flex;gap:8px;margin-bottom:12px;align-items:flex-end}
+.wa-row .field{flex:1}
+.gen-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:14px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border:1.5px solid var(--border);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
+.modal-header{padding:13px 17px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem}
+.modal-close{background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:14px 17px}
+.wa-preview{background:var(--navy);border:1px solid var(--border);border-radius:9px;padding:13px;font-family:'DM Mono',monospace;font-size:.8rem;white-space:pre-wrap;line-height:1.85;color:var(--text);max-height:340px;overflow-y:auto}
+.modal-footer{padding:11px 17px;border-top:1.5px solid var(--border);display:flex;gap:8px;flex-wrap:wrap}
+
+/* TOAST */
+.toast{position:fixed;bottom:16px;right:16px;background:var(--card);border:1.5px solid var(--green);color:var(--green);padding:9px 15px;border-radius:9px;font-size:.8rem;font-weight:600;z-index:999;display:none;animation:toastIn .22s ease}
+@keyframes toastIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+
+hr.div{border:none;border-top:1.5px solid var(--border);margin:11px 0}
+
+/* ===================== PRINT STYLES ===================== */
+.print-area{display:none}
+
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body > * { display: none !important; }
+  .print-area { display: block !important; }
+}
+
+/* Half-A4 manifest: fits top half of A4 (148mm tall) */
+.manifest-wrap {
+  font-family: Arial, Helvetica, sans-serif;
+  width: 190mm;
+  max-height: 138mm;
+  padding: 6mm 8mm 4mm;
+  color: #000;
+  background: #fff;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.manifest-wrap * { color: #000 !important; background: transparent !important; }
+
+.mf-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 3.5mm;
+}
+.mf-logo-block .mf-logo {
+  font-size: 18pt;
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.mf-logo-block .mf-co {
+  font-size: 7pt;
+  font-weight: bold;
+  letter-spacing: .4px;
+  line-height: 1.4;
+  margin-top: 1mm;
+}
+.mf-title-block {
+  flex: 1;
+  text-align: center;
+  padding: 0 6mm;
+}
+.mf-title {
+  font-size: 12pt;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  border: 2pt solid #000;
+  padding: 2mm 4mm;
+  display: inline-block;
+  width: 100%;
+}
+.mf-date-line {
+  font-size: 8.5pt;
+  font-weight: bold;
+  margin-top: 2mm;
+  text-align: center;
+}
+.mf-mode-line {
+  font-size: 7.5pt;
+  text-align: center;
+  margin-top: 1mm;
+  color: #444;
+}
+.mf-right-block {
+  text-align: right;
+  font-size: 7.5pt;
+  line-height: 1.6;
+}
+.mf-right-block strong { font-size: 8pt; }
+
+/* Order table */
+.mf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8pt;
+  margin-bottom: 2.5mm;
+}
+.mf-table th {
+  background: #e8e8e8 !important;
+  border: 0.75pt solid #000;
+  padding: 1.5mm 2mm;
+  font-weight: bold;
+  text-align: center;
+  font-size: 7.5pt;
+}
+.mf-table td {
+  border: 0.75pt solid #000;
+  padding: 1.2mm 2mm;
+  font-family: 'Courier New', monospace;
+  font-size: 8pt;
+  height: 5.5mm;
+  vertical-align: middle;
+}
+.mf-table .sno { width: 8mm; text-align: center; }
+.mf-table .total-row td {
+  background: #f5f5f5 !important;
+  font-weight: bold;
+  font-size: 7.5pt;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  height: 5mm;
+}
+
+/* Declaration */
+.mf-decl {
+  font-size: 7pt;
+  border-top: 0.75pt solid #000;
+  padding-top: 1.5mm;
+  margin-bottom: 2.5mm;
+}
+
+/* Signature row */
+.mf-sign {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-size: 7.5pt;
+}
+.mf-exec-table {
+  border-collapse: collapse;
+  font-size: 7.5pt;
+}
+.mf-exec-table td {
+  padding: 1mm 3mm 1mm 0;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+.mf-exec-table .underline {
+  border-bottom: 0.75pt solid #000;
+  min-width: 42mm;
+  display: inline-block;
+  height: 4mm;
+}
+.mf-exec-table .sig-line {
+  border-bottom: 0.75pt solid #000;
+  min-width: 42mm;
+  display: inline-block;
+  height: 9mm;
+}
+.mf-company-block {
+  text-align: right;
+  font-size: 7.5pt;
+}
+.mf-company-block .co-name { font-size: 9pt; font-weight: bold; }
+.mf-seal-line {
+  border-top: 0.75pt solid #000;
+  margin-top: 8mm;
+  padding-top: 1mm;
+  font-size: 7pt;
+  text-align: center;
+}
+
+@media print {
+  @page { size: A4; margin: 10mm 10mm 0mm 10mm; }
+  .manifest-wrap {
+    width: 190mm;
+    max-height: 138mm;
+    padding: 5mm 7mm 3mm;
+  }
+}
+/* ============================================================ */
+
+@media(max-width:600px){
+  .modal-footer,.gen-actions,.review-actions{flex-direction:column}
+  .review-item{grid-template-columns:16px 1fr auto}
+  .wa-row{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">IBI</div>
+  <div class="header-text">
+    <h1>Amazon Pickup Request Manager</h1>
+    <p>India Business International &nbsp;|&nbsp; Amazon &amp; Amazon Bazaar</p>
+  </div>
+  <span class="amazon-badge">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M.045 18.02c.072-.116.187-.124.348-.022 3.636 2.11 7.594 3.166 11.87 3.166 2.852 0 5.668-.533 8.447-1.595l.315-.14c.138-.06.234-.1.293-.13.226-.088.39-.046.525.13.12.174.09.344-.12.507-.53.392-1.14.78-1.822 1.162a18.45 18.45 0 01-7.893 1.754c-3.73 0-7.15-.984-10.26-2.95-.31-.19-.41-.37-.705-.882zm8.244-9.48h.006-.006zm14.666 4.95c-.07.047-.138.069-.2.069-.083 0-.16-.04-.232-.12l-1.176-1.54c-.35-.41-.72-.62-1.094-.62-.372 0-.766.21-1.176.62l-1.176 1.54c-.07.08-.148.12-.232.12-.06 0-.13-.022-.2-.07-.148-.093-.185-.23-.11-.408l.908-2.283c.11-.28.28-.42.505-.42h.19c.228 0 .394.14.5.42l.908 2.283c.074.178.038.315-.113.407z"/></svg>
+    ATS Only
+  </span>
+</header>
+
+<div class="toast" id="toast"></div>
+
+<!-- WA MODAL -->
+<div class="modal-overlay" id="waModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📱 WhatsApp Pickup Alert</h3>
+      <button class="modal-close" onclick="closeWA()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="wa-preview" id="waText"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="copyWA()">📋 Copy Message</button>
+      <a class="btn btn-green" id="waLink" href="#" target="_blank">
+        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Open WhatsApp
+      </a>
+      <button class="btn btn-ghost btn-sm" onclick="closeWA()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT AREA -->
+<div class="print-area" id="printArea"></div>
+
+<!-- =========== MAIN APP =========== -->
+<div class="app">
+
+  <!-- Session Details -->
+  <div class="section-title">📅 Pickup Date</div>
+  <div class="card">
+    <div class="grid-2-3">
+      <div class="form-row"><label>📆 Pickup Date</label><input type="date" id="pickupDate"></div>
+      <div class="form-row"><label>📞 Business Phone</label><input type="tel" id="bizPhone" value="+91 8939 4147 99"></div>
+    </div>
+    <div class="form-row"><label>🏢 Business Name</label><input type="text" id="bizName" value="India Business International"></div>
+  </div>
+
+  <!-- Add Orders -->
+  <div class="section-title">📦 Add Amazon Orders</div>
+  <div class="grid-2">
+
+    <!-- Input Panel -->
+    <div class="card">
+      <div class="input-tabs">
+        <button class="input-tab active" onclick="switchTab('pdf',this)">📄 Upload PDFs</button>
+        <button class="input-tab" onclick="switchTab('manual',this)">✏️ Manual Entry</button>
+        <button class="input-tab" onclick="switchTab('paste',this)">📋 Paste Text</button>
+      </div>
+
+      <!-- PDF TAB -->
+      <div id="tab-pdf">
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="pdfInput" accept=".pdf" multiple onchange="handleFiles(event)">
+          <div class="upload-icon">📄</div>
+          <div class="upload-title">Drop PDFs here or tap to browse</div>
+          <div class="upload-sub">Amazon Invoices &amp; Shipping Labels</div>
+          <div class="upload-hint">Multi-file · Extracts Order IDs automatically · 100% runs in your browser</div>
+        </div>
+        <div id="pdfQueue" class="pdf-queue"></div>
+        <div id="reviewContainer" style="display:none">
+          <div class="review-panel">
+            <div class="review-header">
+              <h4 id="reviewTitle">🔍 Review Extracted Orders</h4>
+              <div style="display:flex;gap:5px">
+                <button class="btn btn-ghost btn-sm" onclick="selAll(true)">☑ All</button>
+                <button class="btn btn-ghost btn-sm" onclick="selAll(false)">☐ None</button>
+              </div>
+            </div>
+            <div class="review-list" id="reviewList"></div>
+            <div class="review-actions">
+              <button class="btn btn-primary" onclick="confirmReview()" style="flex:1">✅ Add Selected to Queue</button>
+              <button class="btn btn-ghost btn-sm" onclick="clearReview()">🗑 Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MANUAL TAB -->
+      <div id="tab-manual" style="display:none">
+        <div class="form-row"><label>Platform</label>
+          <select id="manPlat">
+            <option value="Amazon">Amazon</option>
+            <option value="Amazon Bazaar">Amazon Bazaar</option>
+          </select>
+        </div>
+        <div class="form-row"><label>Order ID</label>
+          <input type="text" id="manID" placeholder="407-6033308-1612301" autocomplete="off" onkeydown="if(event.key==='Enter')addManual()">
+        </div>
+        <button class="btn btn-primary btn-full" style="margin-top:2px" onclick="addManual()">➕ Add Order</button>
+      </div>
+
+      <!-- PASTE TAB -->
+      <div id="tab-paste" style="display:none">
+        <div class="form-row"><label>Platform for extracted IDs</label>
+          <select id="pastePlat">
+            <option value="Amazon">Amazon</option>
+            <option value="Amazon Bazaar">Amazon Bazaar</option>
+          </select>
+        </div>
+        <div class="form-row" style="margin-top:8px">
+          <label>Paste text (Order IDs will be auto-detected)</label>
+          <textarea id="pasteBox" style="width:100%;min-height:90px;resize:vertical;background:var(--navy);border:1.5px solid var(--border);border-radius:8px;color:var(--text);padding:8px 11px;font-family:'DM Mono',monospace;font-size:.79rem;line-height:1.6" placeholder="Paste from Seller App, email, or label…"></textarea>
+        </div>
+        <div style="display:flex;gap:7px">
+          <button class="btn btn-ghost btn-sm" style="flex:1" onclick="extractPaste()">🔍 Extract &amp; Add</button>
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('pasteBox').value=''">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Queue -->
+    <div class="card">
+      <div style="display:flex;align-items:center;margin-bottom:10px">
+        <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem;color:var(--amber);text-transform:uppercase;letter-spacing:.08em">🗂️ Order Queue</span>
+        <span id="orderBadge" class="badge-counter">0 orders</span>
+      </div>
+      <div class="stats-bar" id="statsBar" style="display:none">
+        <div class="stat-chip">📦 Total: <strong id="stTotal">0</strong></div>
+        <div class="stat-chip">🛒 Amazon: <strong id="stAmz">0</strong></div>
+        <div class="stat-chip">🏪 Bazaar: <strong id="stBaz">0</strong></div>
+      </div>
+      <div id="orderList" class="order-list">
+        <div class="empty-state"><div class="icon">📭</div><p>Upload PDFs or add order IDs manually.<br>Only Amazon &amp; Amazon Bazaar orders.</p></div>
+      </div>
+      <div style="display:flex;gap:7px;margin-top:9px">
+        <button class="btn btn-ghost btn-sm btn-full" onclick="clearAll()">🗑️ Clear All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generate Section -->
+  <div class="section-title">🚀 Generate Pickup Request</div>
+
+  <div id="noOrdersMsg" class="card" style="text-align:center;padding:26px;color:var(--muted);font-size:.82rem">
+    ℹ️ Add Amazon orders above to generate the pickup request and manifest.
+  </div>
+
+  <div id="genPanel" class="gen-panel" style="display:none">
+    <div class="gen-header">
+      <div class="gen-dot"></div>
+      <span class="gen-name">📦 Amazon Transportation Services (ATS)</span>
+      <span class="gen-count" id="genCount">0 packages</span>
+    </div>
+    <div class="gen-body">
+      <div class="order-preview" id="orderPreview"></div>
+      <div class="wa-row">
+        <div class="field"><label>ATS Pickup Executive WhatsApp Number</label>
+          <input type="tel" id="atsWA" placeholder="919876543210"></div>
+      </div>
+      <div class="gen-actions">
+        <button class="btn btn-green" onclick="genWA()">
+          <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Send WhatsApp Alert
+        </button>
+        <button class="btn btn-blue" onclick="printManifest()">🖨️ Print Pickup Manifest</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:28px;margin-bottom:14px;color:var(--muted);font-size:.68rem">
+    India Business International &nbsp;|&nbsp; iINTELLIGENCEi &nbsp;|&nbsp; Amazon Pickup Request Manager v3.1
+  </div>
+</div>
+
+<script>
+// ── PDF.JS ─────────────────────────────────────────────────────────────────
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let orders = [], reviewItems = [], idC = 0, revC = 0, currentWAMsg = '';
+
+// ── FIXED PICKUP PERSON ────────────────────────────────────────────────────
+const PICKUP_NAME   = 'SasiKumar';
+const PICKUP_MOBILE = '9025608770';
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+function h(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',2800); }
+function blink(id){ const e=document.getElementById(id); e.style.borderColor='var(--red)'; e.focus(); setTimeout(()=>e.style.borderColor='',1500); }
+
+// ── DATE FORMAT ────────────────────────────────────────────────────────────
+// Returns e.g. "Wednesday 18 March 2026"
+function fmtFull(ds) {
+  if (!ds) return '';
+  const d = new Date(ds + 'T00:00:00');
+  const DAYS  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTHS= ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// ── NUMBER WORDS ───────────────────────────────────────────────────────────
+const NW = {1:'One',2:'Two',3:'Three',4:'Four',5:'Five',6:'Six',7:'Seven',8:'Eight',9:'Nine',10:'Ten',11:'Eleven',12:'Twelve',13:'Thirteen',14:'Fourteen',15:'Fifteen',16:'Sixteen',17:'Seventeen',18:'Eighteen',19:'Nineteen',20:'Twenty',21:'Twenty-One',22:'Twenty-Two',23:'Twenty-Three',24:'Twenty-Four',25:'Twenty-Five',26:'Twenty-Six',27:'Twenty-Seven',28:'Twenty-Eight',29:'Twenty-Nine',30:'Thirty'};
+const nw = n => NW[n] || String(n);
+
+// ── PLATFORM DETECTION ─────────────────────────────────────────────────────
+function detectPlat(txt) {
+  if (/amazon/i.test(txt)) return /bazaar/i.test(txt) ? 'Amazon Bazaar' : 'Amazon';
+  return 'Amazon'; // default to Amazon for ATS
+}
+
+// ── ORDER ID EXTRACTION ────────────────────────────────────────────────────
+function extractIDs(txt) {
+  const s = new Set(), re = /\b(\d{3}-\d{7}-\d{7})\b/g;
+  let m; while ((m = re.exec(txt)) !== null) s.add(m[1]);
+  return [...s];
+}
+
+// ── PDF READING ────────────────────────────────────────────────────────────
+async function readPdf(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  let out = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const ct   = await page.getTextContent();
+    out += ct.items.map(x => x.str).join(' ') + '\n';
+  }
+  return out;
+}
+
+// ── FILE HANDLER ───────────────────────────────────────────────────────────
+function handleFiles(e) { processFiles(Array.from(e.target.files)); e.target.value = ''; }
+
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault(); zone.classList.remove('drag-over');
+  const fs = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.pdf'));
+  fs.length ? processFiles(fs) : showToast('⚠️ Drop PDF files only');
+});
+
+async function processFiles(files) {
+  const queue = document.getElementById('pdfQueue');
+  for (const file of files) {
+    const uid = 'f' + Date.now() + Math.random().toString(36).substr(2,4);
+    const row = document.createElement('div');
+    row.className = 'pdf-item processing'; row.id = uid;
+    row.innerHTML = `<span>📄</span><span class="pdf-name" title="${h(file.name)}">${h(file.name)}</span>
+      <span class="pdf-status proc" id="${uid}s">⏳ Reading…</span>`;
+    queue.appendChild(row); queue.scrollTop = 9999;
+
+    try {
+      const txt  = await readPdf(file);
+      const plat = detectPlat(txt);
+      const ids  = extractIDs(txt);
+      row.classList.remove('processing');
+      const sEl = document.getElementById(uid + 's');
+
+      if (!ids.length) {
+        row.classList.add('error');
+        sEl.className = 'pdf-status err'; sEl.textContent = '⚠️ No Amazon order IDs found';
+        const rawId = 'raw' + uid;
+        row.insertAdjacentHTML('afterend',
+          `<span class="raw-toggle" onclick="var r=document.getElementById('${rawId}');r.style.display=r.style.display==='block'?'none':'block'">View extracted text ↓</span>
+           <div class="raw-text-box" id="${rawId}">${h(txt.substring(0,800))}${txt.length>800?'…':''}</div>`);
+      } else {
+        row.classList.add('done');
+        sEl.className = 'pdf-status ok'; sEl.textContent = `✓ ${ids.length} order${ids.length>1?'s':''} · ${plat}`;
+        ids.forEach(id => reviewItems.push({ rid:++revC, orderID:id, platform:plat, sel:true }));
+        renderReview();
+      }
+    } catch(err) {
+      row.classList.remove('processing'); row.classList.add('error');
+      const sEl = document.getElementById(uid + 's');
+      if (sEl) { sEl.className = 'pdf-status err'; sEl.textContent = '✕ Read failed'; }
+    }
+  }
+}
+
+// ── REVIEW ─────────────────────────────────────────────────────────────────
+function renderReview() {
+  const c = document.getElementById('reviewContainer');
+  const l = document.getElementById('reviewList');
+  const t = document.getElementById('reviewTitle');
+  if (!reviewItems.length) { c.style.display = 'none'; return; }
+  c.style.display = 'block';
+  t.textContent = `🔍 Review Extracted Orders (${reviewItems.length})`;
+  l.innerHTML = reviewItems.map(it => `
+    <div class="review-item">
+      <input type="checkbox" class="r-cb" ${it.sel?'checked':''} onchange="revToggle(${it.rid},this.checked)">
+      <span class="r-id">${h(it.orderID)}</span>
+      <select class="r-plat-sel" onchange="revPlat(${it.rid},this.value)">
+        <option${it.platform==='Amazon'?' selected':''}>Amazon</option>
+        <option${it.platform==='Amazon Bazaar'?' selected':''}>Amazon Bazaar</option>
+      </select>
+      <button class="r-del" onclick="revDel(${it.rid})">✕</button>
+    </div>`).join('');
+}
+function revToggle(r,v) { const i=reviewItems.find(x=>x.rid===r); if(i) i.sel=v; }
+function revPlat(r,v)   { const i=reviewItems.find(x=>x.rid===r); if(i) i.platform=v; }
+function revDel(r)      { reviewItems=reviewItems.filter(x=>x.rid!==r); renderReview(); }
+function selAll(v)      { reviewItems.forEach(r=>r.sel=v); renderReview(); }
+function clearReview()  { reviewItems=[]; renderReview(); document.getElementById('pdfQueue').innerHTML=''; }
+
+function confirmReview() {
+  const sel = reviewItems.filter(r => r.sel);
+  if (!sel.length) { showToast('⚠️ Select at least one order'); return; }
+  let added = 0;
+  sel.forEach(r => {
+    if (!orders.find(o => o.orderID === r.orderID)) {
+      orders.push({ id:++idC, platform:r.platform, orderID:r.orderID });
+      added++;
+    }
+  });
+  reviewItems = reviewItems.filter(r => !r.sel);
+  renderReview(); saveState(); renderOrders(); updatePanel();
+  showToast(`✅ Added ${added} order${added!==1?'s':''} to queue!`);
+}
+
+// ── MANUAL ADD ─────────────────────────────────────────────────────────────
+function addManual() {
+  const p  = document.getElementById('manPlat').value;
+  const id = document.getElementById('manID').value.trim();
+  if (!id) { blink('manID'); return; }
+  if (orders.find(o => o.orderID === id)) { showToast('⚠️ Already in queue'); return; }
+  orders.push({ id:++idC, platform:p, orderID:id });
+  document.getElementById('manID').value = '';
+  document.getElementById('manID').focus();
+  saveState(); renderOrders(); updatePanel();
+}
+
+// ── PASTE EXTRACT ──────────────────────────────────────────────────────────
+function extractPaste() {
+  const txt = document.getElementById('pasteBox').value;
+  const p   = document.getElementById('pastePlat').value;
+  if (!txt.trim()) return;
+  const ids = extractIDs(txt);
+  if (!ids.length) { showToast('⚠️ No Amazon order IDs detected'); return; }
+  let added = 0;
+  ids.forEach(id => {
+    if (!orders.find(o => o.orderID === id)) { orders.push({ id:++idC, platform:p, orderID:id }); added++; }
+  });
+  document.getElementById('pasteBox').value = '';
+  saveState(); renderOrders(); updatePanel();
+  showToast(`✅ Added ${added} order${added!==1?'s':''}`);
+}
+
+// ── ORDER MANAGEMENT ───────────────────────────────────────────────────────
+function removeOrder(id) { orders=orders.filter(o=>o.id!==id); saveState(); renderOrders(); updatePanel(); }
+function clearAll() { if(!orders.length)return; if(!confirm('Clear all orders from the queue?'))return; orders=[]; saveState(); renderOrders(); updatePanel(); }
+
+function renderOrders() {
+  const list  = document.getElementById('orderList');
+  const badge = document.getElementById('orderBadge');
+  const stats = document.getElementById('statsBar');
+  badge.textContent = orders.length + ' order' + (orders.length!==1?'s':'');
+  if (!orders.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Upload PDFs or add order IDs manually.<br>Only Amazon &amp; Amazon Bazaar orders.</p></div>';
+    stats.style.display = 'none'; return;
+  }
+  stats.style.display = 'flex';
+  document.getElementById('stTotal').textContent = orders.length;
+  document.getElementById('stAmz').textContent   = orders.filter(o=>o.platform==='Amazon').length;
+  document.getElementById('stBaz').textContent   = orders.filter(o=>o.platform==='Amazon Bazaar').length;
+  list.innerHTML = orders.map((o,i) => `
+    <div class="order-item">
+      <span class="order-num">${i+1}</span>
+      <span class="order-id">${h(o.orderID)}</span>
+      <span class="plat-badge ${o.platform==='Amazon Bazaar'?'badge-bazaar':'badge-amazon'}">${o.platform}</span>
+      <button class="o-del" onclick="removeOrder(${o.id})">✕</button>
+    </div>`).join('');
+}
+
+function updatePanel() {
+  const has = orders.length > 0;
+  document.getElementById('noOrdersMsg').style.display = has ? 'none' : 'block';
+  document.getElementById('genPanel').style.display    = has ? 'block' : 'none';
+  if (!has) return;
+
+  document.getElementById('genCount').textContent = orders.length + ' package' + (orders.length!==1?'s':'');
+
+  // Build order preview list
+  const preview = document.getElementById('orderPreview');
+  preview.innerHTML = orders.map((o,i) =>
+    `<div>${i+1}. &nbsp; ${h(o.orderID)} &nbsp; <span style="color:${o.platform==='Amazon Bazaar'?'#FFB74D':'#FF9900'};font-size:.68rem">${o.platform}</span></div>`
+  ).join('');
+}
+
+// ── WHATSAPP ───────────────────────────────────────────────────────────────
+function genWA() {
+  const pd = document.getElementById('pickupDate').value;
+  const bn = document.getElementById('bizName').value;
+  const bp = document.getElementById('bizPhone').value;
+  if (!pd) { alert('Please set the Pickup Date first.'); return; }
+  if (!orders.length) return;
+
+  const total = orders.length;
+  let lines   = '';
+  orders.forEach((o,i) => { lines += `${i+1}.\u00a0\u00a0\u00a0\u00a0\u00a0${o.orderID}\n`; });
+
+  const msg =
+`🚨 Pickup Alert | ${bn}
+Dear Sir, ${nw(total)} (${total}) Amazon package${total!==1?'s':''} are ready for pickup today (${fmtFull(pd)}).
+Order ID(s):
+${lines.trimEnd()}
+Kindly arrange pickup at the earliest.
+Thank you for your support.
+${bn} 📞 ${bp}`;
+
+  currentWAMsg = msg;
+  document.getElementById('waText').textContent = msg;
+
+  const wn  = document.getElementById('atsWA').value.replace(/\D/g,'');
+  const enc = encodeURIComponent(msg);
+  document.getElementById('waLink').href = wn
+    ? `https://api.whatsapp.com/send?phone=${wn}&text=${enc}`
+    : `https://api.whatsapp.com/send?text=${enc}`;
+
+  document.getElementById('waModal').classList.add('open');
+}
+function closeWA()  { document.getElementById('waModal').classList.remove('open'); }
+function copyWA()   { navigator.clipboard.writeText(currentWAMsg).then(()=>showToast('✅ Message copied!')); }
+
+// ── PRINT MANIFEST ─────────────────────────────────────────────────────────
+function printManifest() {
+  const pd = document.getElementById('pickupDate').value;
+  const bn = document.getElementById('bizName').value;
+  if (!pd)          { alert('Please set the Pickup Date first.'); return; }
+  if (!orders.length) return;
+
+  const total    = orders.length;
+  const dateStr  = fmtFull(pd);
+
+  // Build 2-column order table (col A = orders 1..ceil(n/2), col B = rest)
+  const half  = Math.ceil(total / 2);
+  const colA  = orders.slice(0, half);
+  const colB  = orders.slice(half);
+  const rows  = Math.max(colA.length, colB.length);
+
+  // Minimum 6 rows for signature breathing room
+  const tableRows = Math.max(rows, 6);
+
+  let tbody = '';
+  for (let i = 0; i < tableRows; i++) {
+    const a = colA[i], b = colB[i];
+    tbody += `<tr>
+      <td class="sno">${a ? i+1 : ''}</td>
+      <td>${a ? a.orderID : ''}</td>
+      <td class="sno">${b ? half+i+1 : ''}</td>
+      <td>${b ? b.orderID : ''}</td>
+    </tr>`;
+  }
+
+  const html = `
+<div class="manifest-wrap">
+
+  <!-- TOP ROW: Logo | Title | Courier info -->
+  <div class="mf-top">
+    <div class="mf-logo-block">
+      <div class="mf-logo">IBI</div>
+      <div class="mf-co">INDIA BUSINESS<br>INTERNATIONAL</div>
+    </div>
+
+    <div class="mf-title-block">
+      <div class="mf-title">AMAZON PICKUP — MANIFEST</div>
+      <div class="mf-date-line">${dateStr}</div>
+      <div class="mf-mode-line">Mode: Amazon Pickup / ATS &nbsp;|&nbsp; Total Packages: ${total} (${nw(total)})</div>
+    </div>
+
+    <div class="mf-right-block">
+      <strong>Courier:</strong><br>Amazon ATS<br><br>
+      <strong>Pkgs:</strong> ${total}
+    </div>
+  </div>
+
+  <!-- ORDER TABLE -->
+  <table class="mf-table">
+    <thead>
+      <tr>
+        <th class="sno">S.No.</th>
+        <th>Order ID</th>
+        <th class="sno">S.No.</th>
+        <th>Order ID</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${tbody}
+      <tr class="total-row">
+        <td colspan="4">Total Orders Handed Over: ${total} (${nw(total)})</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- DECLARATION -->
+  <div class="mf-decl">
+    <strong>Declaration:</strong> All the above parcels are packed, labelled, and ready for pickup as per Amazon shipping guidelines.
+  </div>
+
+  <!-- SIGNATURE ROW -->
+  <div class="mf-sign">
+    <div>
+      <table class="mf-exec-table">
+        <tr>
+          <td><strong>Pickup Executive:</strong></td>
+          <td><span class="underline">&nbsp;${PICKUP_NAME}&nbsp;</span></td>
+        </tr>
+        <tr>
+          <td><strong>Mobile:</strong></td>
+          <td><span class="underline">&nbsp;+91 ${PICKUP_MOBILE}&nbsp;</span></td>
+        </tr>
+        <tr>
+          <td><strong>Signature:</strong></td>
+          <td><span class="sig-line"></span></td>
+        </tr>
+      </table>
+    </div>
+    <div class="mf-company-block">
+      <div class="co-name">${bn}</div>
+      <div style="font-size:7pt;margin-top:1mm">For and on behalf of</div>
+      <div class="mf-seal-line">Authorised Signatory &amp; Seal</div>
+    </div>
+  </div>
+
+</div>`;
+
+  const pa = document.getElementById('printArea');
+  pa.innerHTML = html; pa.style.display = 'block';
+
+  const s = document.createElement('style'); s.id = 'dps'; s.media = 'print';
+  s.textContent = `body>*{display:none!important}.print-area{display:block!important}`;
+  document.head.appendChild(s);
+
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { document.getElementById('dps')?.remove(); pa.style.display='none'; pa.innerHTML=''; }, 1200);
+  }, 120);
+}
+
+// ── TABS ───────────────────────────────────────────────────────────────────
+function switchTab(t, btn) {
+  ['pdf','manual','paste'].forEach(x => document.getElementById('tab-'+x).style.display = x===t?'block':'none');
+  document.querySelectorAll('.input-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── PERSIST ────────────────────────────────────────────────────────────────
+function saveState() {
+  try {
+    localStorage.setItem('ibi_amz_pu', JSON.stringify({
+      orders, idC,
+      pickupDate: document.getElementById('pickupDate').value,
+      bizName:    document.getElementById('bizName').value,
+      bizPhone:   document.getElementById('bizPhone').value,
+      atsWA:      document.getElementById('atsWA').value,
+    }));
+  } catch(e) {}
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const t  = new Date();
+  const dd = String(t.getDate()).padStart(2,'0');
+  const mm = String(t.getMonth()+1).padStart(2,'0');
+  document.getElementById('pickupDate').value = `${t.getFullYear()}-${mm}-${dd}`;
+
+  try {
+    const d = JSON.parse(localStorage.getItem('ibi_amz_pu') || '{}');
+    if (d.orders)     orders = d.orders;
+    if (d.idC)        idC    = d.idC;
+    if (d.pickupDate) document.getElementById('pickupDate').value = d.pickupDate;
+    if (d.bizName)    document.getElementById('bizName').value    = d.bizName;
+    if (d.bizPhone)   document.getElementById('bizPhone').value   = d.bizPhone;
+    if (d.atsWA)      document.getElementById('atsWA').value      = d.atsWA;
+  } catch(e) {}
+
+  renderOrders(); updatePanel();
+
+  ['pickupDate','bizName','bizPhone','atsWA'].forEach(id =>
+    document.getElementById(id)?.addEventListener('change', saveState));
+});
+
+document.getElementById('waModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('waModal')) closeWA();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeWA(); });
+</script>
+</body>
+</html>
