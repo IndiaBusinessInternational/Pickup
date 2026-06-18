@@ -56,6 +56,21 @@ function toISO_(v) {
 
 function isValidDate_(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s); }
 
+/**
+ * Flipkart/Shopsy Order IDs also print glued to the Invoice No on the tax
+ * invoice (e.g. OD337737259727708100-LWACJIC270000291). The trailing invoice
+ * text is NOT part of the order key — it is the same single package — so we
+ * collapse any "OD"+15-22 digits value down to that bare base. One order can
+ * then never hold two rows. Non-Flipkart IDs are returned unchanged, so Meesho
+ * 18-digit sub-orders (incl. their _1/_2 suffixes) and Amazon 3-7-7 IDs are
+ * left exactly as-is.
+ */
+function normID_(id) {
+  var s = String(id == null ? '' : id).trim();
+  var m = s.match(/^OD\d{15,22}/);
+  return m ? m[0] : s;
+}
+
 /** JSON response helper. */
 function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
@@ -94,36 +109,64 @@ function doPost(e) {
     var sh = getSheet_();
     var values = sh.getDataRange().getValues();
 
-    // Index existing rows: OrderID -> 1-based row number.
-    var idx = {};
+    // Index existing rows by NORMALISED OrderID (Flipkart collapsed to its
+    // "OD…" base). rowsByKey keeps every physical row sharing a key so stale
+    // suffixed Flipkart duplicates left by older builds can be merged into one.
+    var idx = {};        // normKey -> 1-based row chosen as the live row
+    var rowsByKey = {};  // normKey -> [1-based rows...]
     for (var i = 1; i < values.length; i++) {
-      if (values[i][0] !== '' && values[i][0] != null) idx[String(values[i][0])] = i + 1;
+      if (values[i][0] === '' || values[i][0] == null) continue;
+      var k = normID_(values[i][0]);
+      idx[k] = i + 1;
+      (rowsByKey[k] = rowsByKey[k] || []).push(i + 1);
     }
 
     var now = new Date().toISOString();
-    var added = 0, updated = 0, skipped = 0;
+    var added = 0, updated = 0, skipped = 0, merged = 0;
     var toAppend = [];
+    var rowsToDelete = [];
 
     for (var j = 0; j < dispatches.length; j++) {
       var rec = dispatches[j] || {};
-      var id = String(rec.orderID || '').trim();
+      var id = normID_(rec.orderID);
       var date = toISO_(rec.date || '');
       if (!id || !isValidDate_(date)) { skipped++; continue; }
       var platform = rec.platform || '';
       var courier = rec.courier || '';
-      if (idx[id]) {
-        sh.getRange(idx[id], 2, 1, 4).setValues([[date, platform, courier, now]]);
+
+      // Merge away any stale rows that share this base (e.g. a suffixed
+      // Flipkart row alongside the bare one): keep the last, mark the rest
+      // for deletion so the live row below is the only survivor.
+      var sibs = rowsByKey[id] || [];
+      if (sibs.length > 1) {
+        for (var sIdx = 0; sIdx < sibs.length - 1; sIdx++) {
+          rowsToDelete.push(sibs[sIdx]); merged++;
+        }
+        var live = sibs[sibs.length - 1];
+        rowsByKey[id] = [live];
+        idx[id] = live;
+      }
+
+      if (idx[id] && idx[id] > 0) {
+        // Rewrite the OrderID cell too, in case the surviving row still holds
+        // a suffixed value, then update the rest of the columns.
+        sh.getRange(idx[id], 1, 1, HEADERS.length).setValues([[id, date, platform, courier, now]]);
         updated++;
       } else {
         toAppend.push([id, date, platform, courier, now]);
         idx[id] = -1; // guard against duplicates within the same batch
+        rowsByKey[id] = [-1];
         added++;
       }
     }
     if (toAppend.length) {
       sh.getRange(sh.getLastRow() + 1, 1, toAppend.length, HEADERS.length).setValues(toAppend);
     }
-    return json_({ ok: true, added: added, updated: updated, skipped: skipped, total: Math.max(0, sh.getLastRow() - 1) });
+    // Delete merged-away duplicate rows bottom-up so row indexes stay valid.
+    rowsToDelete.sort(function (a, b) { return b - a; });
+    for (var dRow = 0; dRow < rowsToDelete.length; dRow++) sh.deleteRow(rowsToDelete[dRow]);
+
+    return json_({ ok: true, added: added, updated: updated, skipped: skipped, merged: merged, total: Math.max(0, sh.getLastRow() - 1) });
   } catch (err2) {
     return json_({ ok: false, error: String(err2) });
   } finally {
