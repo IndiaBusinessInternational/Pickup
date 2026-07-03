@@ -2176,9 +2176,12 @@ function extractPaste(sec){
 // ── ORDER MANAGEMENT ───────────────────────────────────────────────────────
 function removeOrder(sec,id){S[sec].orders=S[sec].orders.filter(o=>o.id!==id);saveState();renderOrders(sec);updatePanel(sec);}
 function clearAll(sec){
-  if(!S[sec].orders.length)return;
+  if(!S[sec].orders.length && !S[sec].formattedPageImg)return;
   if(!confirm('Clear all '+sec.toUpperCase()+' orders?'))return;
-  S[sec].orders=[];saveState();renderOrders(sec);updatePanel(sec);
+  S[sec].orders=[];
+  if(sec==='del') clearMeeshoFormatted();
+  if(sec==='xb')  clearShopCluesFormatted();
+  saveState();renderOrders(sec);updatePanel(sec);
 }
 
 function renderOrders(sec){
@@ -2441,11 +2444,13 @@ function overallClearAll(){
     S[s].orders=[]; S[s].rev=[]; S[s].idC=0; S[s].rC=0;
     renderOrders(s); updatePanel(s); renderReview(s);
     // Clear file queues
-    ['pdf','img'].forEach(t=>{
+    ['pdf','img','mf'].forEach(t=>{
       const q=document.getElementById(s+'-'+t+'-queue');
       if(q) q.innerHTML='';
     });
   });
+  clearMeeshoFormatted();
+  clearShopCluesFormatted();
   saveState();
   showToast('✅ All platforms cleared!');
 }
@@ -2706,6 +2711,7 @@ async function handleMeeshoManifestPDF(e){
     setQSt(uid, true, '✓ Page 2 ready (cropped to content)');
     document.getElementById('del-mf-rows-info').style.display = 'block';
     document.getElementById('del-mf-cnt').textContent = 'Manifest ready · Tap to print';
+    saveState();
     showToast('✓ Manifest extracted (page 2)');
   }catch(err){
     setQSt(uid, false, '✗ '+(err.message||'extraction failed'));
@@ -2715,11 +2721,13 @@ async function handleMeeshoManifestPDF(e){
 
 function clearMeeshoFormatted(){
   S.del.formattedPageImg = '';
+  S.del.formattedPageHeight = 0;
   S.del.formattedFileName = '';
   const info = document.getElementById('del-mf-rows-info');
   if(info) info.style.display = 'none';
   const q = document.getElementById('del-mf-queue');
   if(q) q.innerHTML = '';
+  saveState();
 }
 
 function printMeeshoFormatted(){
@@ -2794,6 +2802,7 @@ async function handleShopCluesManifestPDF(e){
     setQSt(uid, true, '✓ Manifest page 1 ready');
     document.getElementById('xb-mf-rows-info').style.display = 'block';
     document.getElementById('xb-mf-cnt').textContent = 'Manifest ready · Tap to print';
+    saveState();
     showToast('✓ ShopClues manifest extracted (page 1)');
   }catch(err){
     setQSt(uid, false, '✗ '+(err.message||'extraction failed'));
@@ -2809,6 +2818,7 @@ function clearShopCluesFormatted(){
   if(info) info.style.display = 'none';
   const q = document.getElementById('xb-mf-queue');
   if(q) q.innerHTML = '';
+  saveState();
 }
 
 function printShopCluesFormatted(){
@@ -2890,7 +2900,17 @@ function saveState(){
       xbWA:document.getElementById('xb-wa')?.value||'',
     };
     ['amz','fk','del','xb'].forEach(s=>{d[s+'_o']=S[s].orders;d[s+'_iC']=S[s].idC;});
-    localStorage.setItem('ibi_pu5',JSON.stringify(d));
+    ['del','xb'].forEach(s=>{
+      d[s+'_fImg']=S[s].formattedPageImg||'';
+      d[s+'_fH']=S[s].formattedPageHeight||0;
+      d[s+'_fName']=S[s].formattedFileName||'';
+    });
+    try{ localStorage.setItem('ibi_pu5',JSON.stringify(d)); }
+    catch(qe){
+      // Quota exceeded — drop the bulky manifest images but keep the orders
+      ['del','xb'].forEach(s=>{ d[s+'_fImg']=''; d[s+'_fH']=0; d[s+'_fName']=''; });
+      localStorage.setItem('ibi_pu5',JSON.stringify(d));
+    }
   }catch(e){}
 }
 
@@ -2911,6 +2931,21 @@ document.addEventListener('DOMContentLoaded',()=>{
     ['amz','fk','del','xb'].forEach(s=>{
       if(d[s+'_o'])  S[s].orders=d[s+'_o'];
       if(d[s+'_iC']) S[s].idC=d[s+'_iC'];
+    });
+    // Restore uploaded formatted manifests (Meesho / ShopClues) after refresh
+    ['del','xb'].forEach(s=>{
+      if(d[s+'_fImg']){
+        S[s].formattedPageImg=d[s+'_fImg'];
+        S[s].formattedPageHeight=d[s+'_fH']||0;
+        S[s].formattedFileName=d[s+'_fName']||'';
+        const uid=s+'mfrestored';
+        addQueueRow(s+'-mf-queue', uid, S[s].formattedFileName||'manifest.pdf');
+        setQSt(uid, true, '✓ Restored — ready to print');
+        const info=document.getElementById(s+'-mf-rows-info');
+        if(info) info.style.display='block';
+        const cnt=document.getElementById(s+'-mf-cnt');
+        if(cnt) cnt.textContent='Manifest ready · Tap to print';
+      }
     });
   }catch(e){}
 
