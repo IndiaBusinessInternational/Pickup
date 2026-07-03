@@ -632,8 +632,8 @@ select {
 /* ═══ Formatted Meesho Manifest (mimics official Meesho layout) ═══ */
 .fmt-manifest-wrap { font-family: 'Roboto', Arial, sans-serif; color:#000; background:#fff; padding: 4mm; width: 194mm; }
 .fmt-manifest-wrap * { color:#000 !important; background:transparent !important; }
-.fmt-pdf-page { display: block; width: 100%; object-fit: contain; margin: 0 auto 5mm; page-break-after: avoid; }
-.fmt-mf-foot { display: flex; justify-content: space-between; align-items: flex-end; font-size: 9.5pt; padding: 0 4mm; margin-top: 4mm; page-break-inside: avoid; break-inside: avoid; }
+.fmt-pdf-page { display: block; width: 100%; object-fit: contain; margin: 0 auto 1mm; page-break-after: avoid; }
+.fmt-mf-foot { display: flex; justify-content: space-between; align-items: flex-end; font-size: 9.5pt; padding: 0 4mm; margin-top: 1mm; page-break-inside: avoid; break-inside: avoid; }
 .fmt-mf-foot-left div { margin-bottom: 2mm; }
 .fmt-ul { display: inline-block; border-bottom: .75pt solid #000; min-width: 55mm; height: 4mm; vertical-align: bottom; }
 .fmt-mf-foot-right { text-align: right; }
@@ -2669,7 +2669,7 @@ function smartCropHeight(canvas){
       break;
     }
   }
-  return Math.min(lastRow + 40, h); // +40px (~4mm) padding below last content row
+  return Math.min(lastRow + 12, h); // +12px (~1mm) padding below last content row
 }
 
 async function handleMeeshoManifestPDF(e){
