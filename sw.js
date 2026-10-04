@@ -2,7 +2,7 @@
  * NETWORK-FIRST for everything: online you always get the live files (no stale versions);
  * the cache is only used when the network fails. Other sites (APIs, Google, CDNs) are never touched.
  * Bump CACHE with every release. */
-const CACHE = 'ibi-ibi-pickup-v10-8';
+const CACHE = 'ibi-ibi-pickup-v10-9';
 self.addEventListener('install', (e) => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then((c) => c.addAll([new Request('./', { cache: 'reload' })])).catch(() => {})); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE && k.startsWith('ibi-')).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', (e) => {
