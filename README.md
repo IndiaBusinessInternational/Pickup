@@ -1,4 +1,6 @@
-# Pickup v10.13
+# Pickup v10.14
+
+v10.14 (27 Oct 2026): WhatsApp link preview uses a 1200x630 JPEG banner (og-banner.jpg, image/jpeg); new "Share this app" button in the header.
 
 v10.13 (19 Oct 2026): edge to edge on all screens, laptops included.
 
