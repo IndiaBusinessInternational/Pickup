@@ -1,4 +1,7 @@
-# Pickup v10.14
+# Pickup v10.15
+
+v10.15 (6 Nov 2026): new sections for JioMart (Delhivery), IBI Website (ST Courier), MyStore.in and IndiaMart; each pulls its orders from the Package Tracker.
+
 
 v10.14 (27 Oct 2026): WhatsApp link preview uses a 1200x630 JPEG banner (og-banner.jpg, image/jpeg); new "Share this app" button in the header.
 
